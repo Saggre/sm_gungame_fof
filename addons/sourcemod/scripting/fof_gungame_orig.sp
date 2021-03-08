@@ -67,21 +67,21 @@ new String:szWinner[MAX_NAME_LENGTH];
 new iLeader = 0;
 new iMaxLevel = 1;
 
-new iPlayerLevel[MAXPLAYERS+1];
-new bool:bUpdateEquipment[MAXPLAYERS+1];
-new Float:flLastKill[MAXPLAYERS+1];
-new Float:flLastLevelUP[MAXPLAYERS+1];
-new Float:flLastUse[MAXPLAYERS+1];
-new bool:bWasInGame[MAXPLAYERS+1];
-new String:szLastWeaponFired[MAXPLAYERS+1][32];
-new bool:bFirstEquip[MAXPLAYERS+1];
-new bool:bFirstSpawn[MAXPLAYERS+1];
-new Float:flStart[MAXPLAYERS+1];
-new bool:bInTheLead[MAXPLAYERS+1];
-new bool:bWasInTheLead[MAXPLAYERS+1];
+new iPlayerLevel[MAXPLAYERS + 1];
+new bool:bUpdateEquipment[MAXPLAYERS + 1];
+new Float:flLastKill[MAXPLAYERS + 1];
+new Float:flLastLevelUP[MAXPLAYERS + 1];
+new Float:flLastUse[MAXPLAYERS + 1];
+new bool:bWasInGame[MAXPLAYERS + 1];
+new String:szLastWeaponFired[MAXPLAYERS + 1][32];
+new bool:bFirstEquip[MAXPLAYERS +1 ];
+new bool:bFirstSpawn[MAXPLAYERS + 1];
+new Float:flStart[MAXPLAYERS + 1];
+new bool:bInTheLead[MAXPLAYERS + 1];
+new bool:bWasInTheLead[MAXPLAYERS + 1];
 
-new Handle:g_Timer_GiveWeapon1[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
-new Handle:g_Timer_GiveWeapon2[MAXPLAYERS+1] = {INVALID_HANDLE, ...};
+new Handle:g_Timer_GiveWeapon1[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
+new Handle:g_Timer_GiveWeapon2[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 
 public Plugin:myinfo =
 {
@@ -98,6 +98,10 @@ public APLRes:AskPluginLoad2( Handle:hPlugin, bool:bLateLoad, String:szError[], 
 	return APLRes_Success;
 }
 
+/**
+* Called when the plugin is fully initialized and all known external references are resolved. 
+* This is only called once in the lifetime of the plugin, and is paired with OnPluginEnd().
+*/
 public OnPluginStart()
 {
     sm_fof_gg_version = CreateConVar( "sm_fof_gg_version", PLUGIN_VERSION, "FoF Gun Game Plugin Version", FCVAR_NOTIFY|FCVAR_REPLICATED|FCVAR_SPONLY|FCVAR_DONTRECORD );
@@ -147,12 +151,18 @@ public OnPluginStart()
     }
 }
 
+/**
+* Called when the plugin is about to be unloaded.
+*/
 public OnPluginEnd()
 {
 	AllowMapEnd( true );
 	//SetGameDescription( "Gun Game", false );
 }
 
+/**
+* Called when a client is disconnected from the server.
+*/
 public OnClientDisconnect_Post( iClient )
 {
     //if( iWinner == iClient ) iWinner = 0;
@@ -195,7 +205,7 @@ public OnMapStart()
     PrecacheSound( SOUND_LOSTLEAD, true );
     PrecacheSound( SOUND_TAKENLEAD, true );
     PrecacheSound( SOUND_TIEDLEAD, true );
-    for(new i=0; i < sizeof(g_RoundStartSounds); i++)
+    for(new i = 0; i < sizeof(g_RoundStartSounds); i++)
     {
         PrecacheSound(g_RoundStartSounds[i]);
     }
@@ -205,6 +215,9 @@ public OnMapStart()
     SDKHook(GetPlayerResourceEntity(), SDKHook_ThinkPost, Hook_OnPlayerResourceThinkPost);
 }
 
+/**
+* Remove crate entities
+*/
 RemoveCrates()
 {
     new ent = INVALID_ENT_REFERENCE;
@@ -214,6 +227,9 @@ RemoveCrates()
     }
 }
 
+/**
+* Called when the map has loaded, servercfgfile (server.cfg) has been executed, and all plugin configs are done executing.
+*/
 public OnConfigsExecuted()
 {
 	SetGameDescription( "Gun Game", true );
@@ -224,6 +240,9 @@ public OnConfigsExecuted()
 	ReloadConfigFile();
 }
 
+/**
+* Read convars
+*/
 stock ScanConVars()
 {
 	bAllowFists = GetConVarBool( fof_gungame_fists );
@@ -235,6 +254,9 @@ stock ScanConVars()
 	flBonusRoundTime = FloatMax( 0.0, GetConVarFloat( mp_bonusroundtime ) );
 }
 
+/**
+* Reload gamemode config file
+*/
 stock ReloadConfigFile()
 {
 	iMaxLevel = 1;
@@ -329,6 +351,9 @@ public Event_PlayerActivate( Handle:hEvent, const String:szEventName[], bool:bDo
 	}
 }
 
+/**
+* On player spawn
+*/
 public Event_PlayerSpawn( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
 	new iUserID = GetEventInt( hEvent, "userid" );
@@ -344,6 +369,9 @@ public Event_PlayerSpawn( Handle:hEvent, const String:szEventName[], bool:bDontB
 	CreateTimer( 0.1, Timer_UpdateEquipment, iUserID, TIMER_FLAG_NO_MAPCHANGE );
 }
 
+/**
+* On player shoot
+*/
 public Event_PlayerShoot( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
     new iClient = GetClientOfUserId(GetEventInt(hEvent, "userid"));
@@ -353,6 +381,9 @@ public Event_PlayerShoot( Handle:hEvent, const String:szEventName[], bool:bDontB
     }
 }
 
+/**
+* On player death
+*/
 public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontBroadcast )
 {
     new iVictim = GetClientOfUserId( GetEventInt( hEvent, "userid" ) );
@@ -395,7 +426,7 @@ public Event_PlayerDeath( Handle:hEvent, const String:szEventName[], bool:bDontB
     new String:szWeapon[32];
     GetEventString( hEvent, "weapon", szWeapon, sizeof( szWeapon ) );
 
-    //Humiliate victim on fists kill by lowering their level
+    // Humiliate victim on fists kill or kick-fall by lowering their level.
     if( (StrEqual(szWeapon, "fists") ||  StrEqual(szWeapon, "kick-fall") ) 
         && iPlayerLevel[iVictim] > 1 && 0 < iKiller <= MaxClients)
     {
@@ -537,6 +568,9 @@ public Action:Timer_GetDrunk( Handle:hTimer, any:iUserID )
     return Plugin_Stop;
 }
 
+/**
+* On round start
+*/
 public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
 {
     RemoveCrates();
@@ -1119,6 +1153,9 @@ stock AllowMapEnd( bool:bState )
         SetConVarBool( fof_sv_dm_timer_ends_map, bState, false, false );
 }
 
+/**
+* Check current leader
+*/
 stock LeaderCheck( bool:bShowMessage = true )
 {
     new iTopLevel = 1, nLeaders = 0, iOldLeader = iLeader;
