@@ -1196,18 +1196,6 @@ stock WriteLog( const String:szFormat[], any:... )
 #endif
 }
 
-stock PrintToConsoleAll( const String:szFormat[], any:... )
-    if( szFormat[0] != '\0' )
-{
-    decl String:szBuffer[1024];
-    VFormat( szBuffer, sizeof( szBuffer ), szFormat, 2 );
-
-    PrintToServer( szBuffer );
-    for( new i = 1; i <= MaxClients; i++ )
-        if( IsClientInGame( i ) )
-            PrintToConsole( i, szBuffer );
-}
-
 stock Int32Max( iValue1, iValue2 )
     return iValue1 > iValue2 ? iValue1 : iValue2;
 stock Float:FloatMax( Float:flValue1, Float:flValue2 )
