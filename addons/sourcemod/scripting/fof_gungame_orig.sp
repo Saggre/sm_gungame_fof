@@ -37,7 +37,6 @@ new String:g_RoundStartSounds[][] =
 #define HUD2_Y 0.10
 
 new Handle:sm_fof_gg_version = INVALID_HANDLE;
-new Handle:fof_gungame_enabled = INVALID_HANDLE;
 new Handle:fof_gungame_config = INVALID_HANDLE;
 new Handle:fof_gungame_fists = INVALID_HANDLE;
 new Handle:fof_gungame_equip_delay = INVALID_HANDLE;
@@ -57,7 +56,6 @@ new String:szLogFile[PLATFORM_MAX_PATH];
 new Float:flBonusRoundTime = 5.0;
 
 new bool:bLateLoaded = false;
-new bool:bDeathmatch = false;
 new Handle:hHUDSync1 = INVALID_HANDLE;
 new Handle:hHUDSync2 = INVALID_HANDLE;
 new Handle:hWeapons = INVALID_HANDLE;
@@ -108,7 +106,6 @@ public OnPluginStart()
     SetConVarString( sm_fof_gg_version, PLUGIN_VERSION );
     HookConVarChange( sm_fof_gg_version, OnVerConVarChanged );
 
-    fof_gungame_enabled = CreateConVar( "fof_gungame_enabled", "0", _, FCVAR_NOTIFY, true, 0.0, true, 1.0 );
     HookConVarChange( fof_gungame_config = CreateConVar( "fof_gungame_config", "gungame_weapons.txt", _, 0 ), OnCfgConVarChanged );
     HookConVarChange( fof_gungame_fists = CreateConVar( "fof_gungame_fists", "1", "Allow or disallow fists.", FCVAR_NOTIFY, true, 0.0, true, 1.0 ), OnConVarChanged );
     HookConVarChange( fof_gungame_equip_delay = CreateConVar( "fof_gungame_equip_delay", "0.0", "Seconds before giving new equipment.", FCVAR_NOTIFY, true, 0.0 ), OnConVarChanged );
@@ -178,9 +175,7 @@ public OnMapStart()
 {
     new Handle:mp_teamplay = FindConVar( "mp_teamplay" );
     new Handle:fof_sv_currentmode = FindConVar( "fof_sv_currentmode" );
-    if( mp_teamplay != INVALID_HANDLE && fof_sv_currentmode != INVALID_HANDLE )
-        bDeathmatch = ( GetConVarInt( mp_teamplay ) == 0 && GetConVarInt( fof_sv_currentmode ) == 1 );
-    else
+    if( mp_teamplay == INVALID_HANDLE || fof_sv_currentmode == INVALID_HANDLE )
         SetFailState( "Missing mp_teamplay or/and fof_sv_currentmode console variable" );
 
     iWinner = 0;
