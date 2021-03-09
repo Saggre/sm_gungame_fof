@@ -203,25 +203,25 @@ native bool:SteamWorks_SetHTTPRequestNetworkActivityTimeout(Handle:hHandle, time
 native bool:SteamWorks_SetHTTPRequestHeaderValue(Handle:hHandle, const String:sName[], const String:sValue[]);
 native bool:SteamWorks_SetHTTPRequestGetOrPostParameter(Handle:hHandle, const String:sName[], const String:sValue[]);
 
-funcenum SteamWorksHTTPRequestCompleted
+typeset SteamWorksHTTPRequestCompleted
 {
-	public(Handle:hRequest, bool:bFailure, bool:bRequestSuccessful, EHTTPStatusCode:eStatusCode),
-	public(Handle:hRequest, bool:bFailure, bool:bRequestSuccessful, EHTTPStatusCode:eStatusCode, any:data1),
-	public(Handle:hRequest, bool:bFailure, bool:bRequestSuccessful, EHTTPStatusCode:eStatusCode, any:data1, any:data2)
+	function void (Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode);
+	function void (Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any data1);
+	function void (Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any data1, any data2);
 };
 
-funcenum SteamWorksHTTPHeadersReceived
+typeset SteamWorksHTTPHeadersReceived
 {
-	public(Handle:hRequest, bool:bFailure),
-	public(Handle:hRequest, bool:bFailure, any:data1),
-	public(Handle:hRequest, bool:bFailure, any:data1, any:data2)
+	function void (Handle hRequest, bool bFailure);
+	function void (Handle hRequest, bool bFailure, any data1);
+	function void (Handle hRequest, bool bFailure, any data1, any data2);
 };
 
-funcenum SteamWorksHTTPDataReceived
+typeset SteamWorksHTTPDataReceived
 {
-	public(Handle:hRequest, bool:bFailure, offset, bytesreceived),
-	public(Handle:hRequest, bool:bFailure, offset, bytesreceived, any:data1),
-	public(Handle:hRequest, bool:bFailure, offset, bytesreceived, any:data1, any:data2)
+	function void (Handle hRequest, bool bFailure, int offset, int bytesreceived);
+	function void (Handle hRequest, bool bFailure, int offset, int bytesreceived, any data1);
+	function void (Handle hRequest, bool bFailure, int offset, int bytesreceived, any data1, any data2);
 };
 
 native bool:SteamWorks_SetHTTPCallbacks(Handle:hHandle, SteamWorksHTTPRequestCompleted:fCompleted = INVALID_FUNCTION, SteamWorksHTTPHeadersReceived:fHeaders = INVALID_FUNCTION, SteamWorksHTTPDataReceived:fData = INVALID_FUNCTION, Handle:hCalling = INVALID_HANDLE);
@@ -237,11 +237,11 @@ native bool:SteamWorks_GetHTTPStreamingResponseBodyData(Handle:hRequest, cOffset
 native bool:SteamWorks_GetHTTPDownloadProgressPct(Handle:hRequest, &Float:percent);
 native bool:SteamWorks_SetHTTPRequestRawPostBody(Handle:hRequest, const String:sContentType[], const String:sBody[], bodylen);
 
-funcenum SteamWorksHTTPBodyCallback
+typeset SteamWorksHTTPBodyCallback
 {
-	public(const String:sData[]),
-	public(const String:sData[], any:value),
-	public(const data[], any:value, datalen)
+	function void (const char sData[]);
+	function void (const char sData[], any value);
+	function void (const int data[], any value, int datalen);
 };
 
 native bool:SteamWorks_GetHTTPResponseBodyCallback(Handle:hRequest, SteamWorksHTTPBodyCallback:fCallback, any:data = 0, Handle:hPlugin = INVALID_HANDLE);
