@@ -6,7 +6,7 @@
 #undef REQUIRE_EXTENSIONS
 #tryinclude <steamworks>
 
-#define PLUGIN_VERSION		"1.3.4custom"
+#define PLUGIN_VERSION		"1.3.5custom"
 #define CHAT_PREFIX			"\x04 GG \x07FFDA00 "
 #define CONSOLE_PREFIX		"[GunGame] "
 //#define DEBUG				true
@@ -77,6 +77,8 @@ new bool:bFirstSpawn[MAXPLAYERS + 1];
 new Float:flStart[MAXPLAYERS + 1];
 new bool:bInTheLead[MAXPLAYERS + 1];
 new bool:bWasInTheLead[MAXPLAYERS + 1];
+
+new bool:g_UndoTeamplayDescription = false;
 
 new Handle:g_Timer_GiveWeapon1[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
 new Handle:g_Timer_GiveWeapon2[MAXPLAYERS + 1] = {INVALID_HANDLE, ...};
@@ -171,6 +173,9 @@ public OnClientDisconnect_Post( iClient )
     iPlayerLevel[iClient] = 0;
 }
 
+/**
+* Called on map start
+*/
 public OnMapStart()
 {
     new Handle:mp_teamplay = FindConVar( "mp_teamplay" );
@@ -205,9 +210,25 @@ public OnMapStart()
         PrecacheSound(g_RoundStartSounds[i]);
     }
 
+    g_UndoTeamplayDescription = true;
+
     CreateTimer( 1.0, Timer_UpdateHUD, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE );
+    CreateTimer( 1.0, Timer_Repeat, .flags = TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 
     SDKHook(GetPlayerResourceEntity(), SDKHook_ThinkPost, Hook_OnPlayerResourceThinkPost);
+}
+
+/**
+* Repeats every second.
+* Sets game mode description if not set
+*/
+public Action:Timer_Repeat(Handle:timer)
+{
+    if (g_UndoTeamplayDescription)
+    {
+        SetGameDescription( "Gun Game", true );
+        g_UndoTeamplayDescription = false;
+    }
 }
 
 /**
@@ -586,6 +607,9 @@ public Event_RoundStart(Event:event, const String:name[], bool:dontBroadcast)
     }
 }
 
+/**
+* On damage received
+*/
 public Action:Hook_OnTakeDamage( iVictim, &iAttacker, &iInflictor, &Float:flDamage, &iDmgType, &iWeapon, Float:vecDmgForce[3], Float:vecDmgPosition[3], iDmgCustom )
 {
     if( 0 < iVictim <= MaxClients && IsClientInGame( iVictim ) )
@@ -1198,11 +1222,13 @@ stock LeaderCheck( bool:bShowMessage = true )
     return nLeaders;
 }
 
-stock bool:SetGameDescription( String:szNewValue[], bool:bOverride = true )
+stock bool:SetGameDescription( const String:szNewValue[], bool:bOverride = true )
 {
 #if defined _SteamWorks_Included
-    if( bOverride )
+    if( bOverride ) {
+        PrintToConsole(0, "Setting game mode name");
         return SteamWorks_SetGameDescription( szNewValue );
+    }
 
     new String:szOldValue[64];
     GetGameDescription( szOldValue, sizeof( szOldValue ), false );
